@@ -16,18 +16,16 @@ public:
         Func input2_16;
         input2_16(x, y) = cast<int16_t>(input2(x, y));
 
-        // Absolute difference.
-        Func diff;
-        diff(x, y) = input2_16(x, y) - input1_16(x, y);
+        // Absolute pixel by pixel difference.
         Func abs_diff;
-        abs_diff(x, y) = Halide::abs(diff(x, y));
+        abs_diff(x, y) = Halide::abs(input2_16(x, y) - input1_16(x, y));
 
-        // Draw the result
+        // Clamp and draw the result
         Func result;
-        result(x, y) = cast<uint8_t>(clamp(abs_diff(x, y), 0, 255));
+        result(x, y) = cast<uint8_t>(clamp(abs_diff(x, y), 10, 255) - 10);
 
         // CPU schedule:
-        //   Parallelize over scan lines, 4 scanlines per task.
+        //   Parallelize over scan lines, 8 scanlines per task.
         //   Independently, vectorize in x.
         result
             .compute_root()
