@@ -1,0 +1,4 @@
+#!/bin/bash
+rm -rf .gradle build jni/halide_generated* libs obj
+git prune
+git gc --aggressive
