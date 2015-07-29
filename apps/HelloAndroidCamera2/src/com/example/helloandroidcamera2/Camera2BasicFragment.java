@@ -155,24 +155,26 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             = new ImageReader.OnImageAvailableListener() {
 
         private Image prevImage;
+        private long prevTimeNs = -1L;
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Log.i(TAG, ">>>>> onImageAvailable");
+            long startTimeNs = System.nanoTime();
+            long elapsedMicroSec = (prevTimeNs == -1L) ? -1L : (startTimeNs - prevTimeNs) / 1000L;
+            prevTimeNs = startTimeNs;
+            Log.d(TAG, ">>>>> onImageAvailable(), " + elapsedMicroSec + "us (" + 1000000L / elapsedMicroSec + "FPS) since last frame");
+
             if (mCameraDevice == null) {
-                Log.e(TAG, "<<<<< onImageAvailable, mCameraDevice == null");
                 return;
             }
 
             Image image = reader.acquireLatestImage();
             if (image == null) {
-                Log.e(TAG, "<<<<< onImageAvailable, image == null");
                 return;
             }
 
             if (prevImage == null) {
                 prevImage = image;
-                Log.e(TAG, "<<<<< onImageAvailable, prevImage == null");
                 return;
             }
 
@@ -199,8 +201,11 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             }
             prevImage.close();
             prevImage = image;
-        }
 
+            long endTimeNs = System.nanoTime();
+            elapsedMicroSec = (endTimeNs - startTimeNs) / 1000L;
+            Log.d(TAG, "<<<<< onImageAvailable(), " + elapsedMicroSec + "us (" + 1000000L / elapsedMicroSec + "FPS) procesing frame");
+        }
     };
 
     /**
