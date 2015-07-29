@@ -154,34 +154,51 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     private final ImageReader.OnImageAvailableListener mOnImageAvailableListener
             = new ImageReader.OnImageAvailableListener() {
 
+        private Image prevImage;
+
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Log.d(TAG, "onImageAvailable");
-            if (mCameraDevice != null) {
-                Image image = reader.acquireLatestImage();
-                if (image == null) {
-                    return;
-                }
+            Log.i(TAG, ">>>>> onImageAvailable");
+            if (mCameraDevice == null) {
+                Log.e(TAG, "<<<<< onImageAvailable, mCameraDevice == null");
+                return;
+            }
 
-                NativeSurfaceHandle dstSurface = NativeSurfaceHandle.lockSurface(mSurface);
-                if (dstSurface != null) {
+            Image image = reader.acquireLatestImage();
+            if (image == null) {
+                Log.e(TAG, "<<<<< onImageAvailable, image == null");
+                return;
+            }
+
+            if (prevImage == null) {
+                prevImage = image;
+                Log.e(TAG, "<<<<< onImageAvailable, prevImage == null");
+                return;
+            }
+
+            NativeSurfaceHandle dstSurface = NativeSurfaceHandle.lockSurface(mSurface);
+            if (dstSurface != null) {
+                HalideYuvBufferT prevSrcYuv = HalideYuvBufferT.fromImage(prevImage);
+                if (prevSrcYuv != null) {
                     HalideYuvBufferT srcYuv = HalideYuvBufferT.fromImage(image);
                     if (srcYuv != null) {
                         HalideYuvBufferT dstYuv = dstSurface.allocNativeYuvBufferT();
 
                         if (mUseEdgeDetector) {
-                            HalideFilters.edgeDetect(srcYuv, dstYuv);
+                            HalideFilters.edgeDetect(prevSrcYuv, dstYuv);
                         } else {
-                            HalideFilters.copy(srcYuv, dstYuv);
+                            HalideFilters.copy(prevSrcYuv, dstYuv);
                         }
 
                         dstYuv.close();
                         srcYuv.close();
                     }
-                    dstSurface.close();
+                    prevSrcYuv.close();
                 }
-                image.close();
+                dstSurface.close();
             }
+            prevImage.close();
+            prevImage = image;
         }
 
     };
