@@ -53,8 +53,8 @@ sources {
 executables {
     halide_generator {
         binaries.all {
-            cppCompiler.args "-std=c++11", "-g", "-Wall", "-fno-rtti", "-I", "${projectDir}/../../include", "-I", "${projectDir}/../../build/include"
-            linker.args "-lHalide", "-ldl", "-lpthread", "-lz", "-L", "${projectDir}/../../bin", "-L", "${projectDir}/../../build/lib"
+            cppCompiler.args "-std=c++11", "-g", "-Wall", "-fno-rtti", "-I", "${projectDir}/../../../HalideBuild/include", "-I", "${projectDir}/../../build/include"
+            linker.args "-lHalide", "-ldl", "-lpthread", "-lz", "-L", "${projectDir}/../../../HalideBuild/bin", "-L", "${projectDir}/../../build/lib"
         }
     }
 }
@@ -85,7 +85,7 @@ binaries.withType(NativeExecutableBinary) { binary ->
             doFirst {
                 println "Executing: " + linkTask.outputFile + " ..."
                 destDir.mkdirs()
-                def envVars = [ "DYLD_LIBRARY_PATH=${projectDir}/../../bin", "LD_LIBRARY_PATH=${projectDir}/../../bin" ]
+                def envVars = [ "DYLD_LIBRARY_PATH=${projectDir}/../../../HalideBuild/bin", "LD_LIBRARY_PATH=${projectDir}/../../../HalideBuild/bin" ]
                 generators.each { generator ->
                     def proc = [linkTask.outputFile, "-g", generator, "-o", ".", "target=$hl_target"]
                         .execute(envVars, destDir)
