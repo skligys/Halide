@@ -3,4 +3,4 @@ set -e
 ADB=$HOME/Work/Android/Sdk/platform-tools/adb
 $ADB devices
 $ADB install -r build/outputs/apk/HelloAndroidCamera2-debug.apk || { echo -e "\e[01;31m" 'INSTALL FAILED' "\e[0m"; exit 1; }
-$ADB logcat | egrep --color=none -i 'Camera|ImageReader|AndroidRuntime|native|ActivityManager'
+$ADB logcat | egrep --color=none -i 'Camera|ImageReader|AndroidRuntime|native|BufferTFunctions|ActivityManager'

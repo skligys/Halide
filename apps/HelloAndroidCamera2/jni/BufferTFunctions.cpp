@@ -145,3 +145,69 @@ bool fill2D(const buffer_t &buffer, uint8_t value) {
 
     return true;
 }
+
+bool flipHorizontal2D(const buffer_t &src, const buffer_t &dst) {
+    if (!equalExtents(src, dst)) {
+        return false;
+    }
+    if (src.elem_size != dst.elem_size) {
+        return false;
+    }
+
+    // Copy element by element, cannot memcpy.
+    int32_t srcElementStrideBytes = src.stride[0] * src.elem_size;
+    int32_t dstElementStrideBytes = dst.stride[0] * dst.elem_size;
+    int32_t srcRowStrideBytes = src.stride[1] * src.elem_size;
+    int32_t dstRowStrideBytes = dst.stride[1] * dst.elem_size;
+
+    // Just do array assignment if elements are small enough.
+    // It's slightly ridiculous that we have all these versions, but oh well.
+    if (src.elem_size == 1) {
+        for (int32_t y = 0; y < src.extent[1]; ++y) {
+            const uint8_t *srcRow = src.host + y * srcRowStrideBytes;
+            uint8_t *dstRow = dst.host + y * dstRowStrideBytes;
+            for (int32_t x = 0, dstX = src.extent[0] - 1; x < src.extent[0]; ++x, --dstX) {
+                dstRow[dstX * dstElementStrideBytes] = srcRow[x * srcElementStrideBytes];
+            }
+        }
+    } else if (src.elem_size == 2) {
+        for (int32_t y = 0; y < src.extent[1]; ++y) {
+            const uint8_t *srcRow = src.host + y * srcRowStrideBytes;
+            uint8_t *dstRow = dst.host + y * dstRowStrideBytes;
+            for (int32_t x = 0, dstX = src.extent[0] - 1; x < src.extent[0]; ++x, --dstX) {
+                const uint16_t *srcElement = reinterpret_cast<const uint16_t *>(
+                    srcRow + x * srcElementStrideBytes);
+                uint16_t *dstElement = reinterpret_cast<uint16_t *>(
+                    dstRow + dstX * dstElementStrideBytes);
+                *dstElement = *srcElement;
+            }
+        }
+    } else if (src.elem_size == 4) {
+        for (int32_t y = 0; y < src.extent[1]; ++y) {
+            const uint8_t *srcRow = src.host + y * srcRowStrideBytes;
+            uint8_t *dstRow = dst.host + y * dstRowStrideBytes;
+            for (int32_t x = 0, dstX = src.extent[0] - 1; x < src.extent[0]; ++x, --dstX) {
+                const uint32_t *srcElement = reinterpret_cast<const uint32_t *>(
+                    srcRow + x * srcElementStrideBytes);
+                uint32_t *dstElement = reinterpret_cast<uint32_t *>(
+                    dstRow + dstX * dstElementStrideBytes);
+                *dstElement = *srcElement;
+            }
+        }
+    } else if (src.elem_size == 8) {
+        for (int32_t y = 0; y < src.extent[1]; ++y) {
+            const uint8_t *srcRow = src.host + y * srcRowStrideBytes;
+            uint8_t *dstRow = dst.host + y * dstRowStrideBytes;
+            for (int32_t x = 0, dstX = src.extent[0] - 1; x < src.extent[0]; ++x, --dstX) {
+                const uint64_t *srcElement = reinterpret_cast<const uint64_t *>(
+                    srcRow + x * srcElementStrideBytes);
+                uint64_t *dstElement = reinterpret_cast<uint64_t *>(
+                    dstRow + dstX * dstElementStrideBytes);
+                *dstElement = *srcElement;
+            }
+        }
+    } else {
+        return false;
+    }
+    return true;
+}

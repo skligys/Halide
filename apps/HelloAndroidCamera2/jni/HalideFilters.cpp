@@ -71,6 +71,9 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_copyHa
          (dstChromaStorage == YuvBufferT::ChromaStorage::kPlanarPackedUFirst ||
           dstChromaStorage == YuvBufferT::ChromaStorage::kPlanarPackedVFirst ||
           dstChromaStorage == YuvBufferT::ChromaStorage::kPlanarGeneric)) {
+
+        // SK: Don't handle this case since it doesn't apply to MotoX 2014.
+
         // Always copy the luma channel directly, potentially falling back to something slow.
         succeeded = copy2D(src->luma(), dst->luma());
         if (succeeded) {
@@ -91,7 +94,13 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_copyHa
             }
         }
     } else {
-        succeeded = copy2D(*src, *dst);
+        succeeded = flipHorizontal2D(src->luma(), dst->luma());
+        if (succeeded) {
+            succeeded = flipHorizontal2D(src->chromaU(), dst->chromaU());
+        }
+        if (succeeded) {
+            succeeded = flipHorizontal2D(src->chromaV(), dst->chromaV());
+        }
     }
 
     return succeeded;

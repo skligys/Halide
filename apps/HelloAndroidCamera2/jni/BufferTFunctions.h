@@ -19,4 +19,8 @@ bool copy2D(const buffer_t &src, const buffer_t &dst);
 // Fills a 2D buffer_t that has an elem_size of 1 with value.
 bool fill2D(const buffer_t &buffer, uint8_t value);
 
+// Copy 2D buffer_t instances from src to dst flipping them horizontally, as long as they
+// have the same extents and elem_size.
+bool flipHorizontal2D(const buffer_t &src, const buffer_t &dst);
+
 #endif // BUFFER_T_FUNCTIONS_H

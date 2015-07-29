@@ -337,7 +337,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
                 // We don't use a front facing camera in this sample.
                 if (characteristics.get(CameraCharacteristics.LENS_FACING)
-                        == CameraCharacteristics.LENS_FACING_FRONT) {
+                        == CameraCharacteristics.LENS_FACING_BACK) {
                     continue;
                 }
 
