@@ -98,22 +98,27 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_copyHa
 }
 
 JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDetectHalide(
-    JNIEnv *env, jobject obj, jlong srcYuvBufferTHandle, jlong dstYuvBufferTHandle) {
-    if (srcYuvBufferTHandle == 0L || dstYuvBufferTHandle == 0L ) {
-        LOGE("edgeDetectHalide failed: src and dst must not be null");
+    JNIEnv *env, jobject obj, jlong src1YuvBufferTHandle, jlong src2YuvBufferTHandle, jlong dstYuvBufferTHandle) {
+    if (src1YuvBufferTHandle == 0L || src2YuvBufferTHandle == 0L || dstYuvBufferTHandle == 0L ) {
+        LOGE("edgeDetectHalide failed: src1, src2 and dst must not be null");
         return false;
     }
 
-    YuvBufferT *src = reinterpret_cast<YuvBufferT *>(srcYuvBufferTHandle);
+    YuvBufferT *src1 = reinterpret_cast<YuvBufferT *>(src1YuvBufferTHandle);
+    YuvBufferT *src2 = reinterpret_cast<YuvBufferT *>(src2YuvBufferTHandle);
     YuvBufferT *dst = reinterpret_cast<YuvBufferT *>(dstYuvBufferTHandle);
 
-    if (!equalExtents(*src, *dst)) {
+    if (!equalExtents(*src1, *dst) || !equalExtents(*src2, *dst)) {
         LOGE("edgeDetectHalide failed: src and dst extents must be equal.\n\t"
-            "src extents: luma: %d, %d, chromaU: %d, %d, chromaV: %d, %d.\n\t"
+            "src1 extents: luma: %d, %d, chromaU: %d, %d, chromaV: %d, %d.\n\t"
+            "src2 extents: luma: %d, %d, chromaU: %d, %d, chromaV: %d, %d.\n\t"
             "dst extents: luma: %d, %d, chromaU: %d, %d, chromaV: %d, %d.",
-            src->luma().extent[0], src->luma().extent[1],
-            src->chromaU().extent[0], src->chromaU().extent[1],
-            src->chromaV().extent[0], src->chromaV().extent[1],
+            src1->luma().extent[0], src1->luma().extent[1],
+            src1->chromaU().extent[0], src1->chromaU().extent[1],
+            src1->chromaV().extent[0], src1->chromaV().extent[1],
+            src2->luma().extent[0], src2->luma().extent[1],
+            src2->chromaU().extent[0], src2->chromaU().extent[1],
+            src2->chromaV().extent[0], src2->chromaV().extent[1],
             dst->luma().extent[0], dst->luma().extent[1],
             dst->chromaU().extent[0], dst->chromaU().extent[1],
             dst->chromaV().extent[0], dst->chromaV().extent[1]);
@@ -142,10 +147,11 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
         fill2D(dst->chromaV(), 128);
     }
 
-    buffer_t srcLuma = src->luma();
+    buffer_t src1Luma = src1->luma();
+    buffer_t src2Luma = src2->luma();
     buffer_t dstLuma = dst->luma();
     int64_t t1 = halide_current_time_ns();
-    int err = edge_detect(&srcLuma, &dstLuma);
+    int err = edge_detect(&src1Luma, &src2Luma, &dstLuma);
     if (err != halide_error_code_success) {
         LOGE("edge_detect failed with error code: %d", err);
     }

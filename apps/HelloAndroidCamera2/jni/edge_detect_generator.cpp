@@ -4,31 +4,28 @@ namespace {
 
 class EdgeDetect : public Halide::Generator<EdgeDetect> {
 public:
-    ImageParam input{ UInt(8), 2, "input" };
+    ImageParam input1{ UInt(8), 2, "input1" };
+    ImageParam input2{ UInt(8), 2, "input2" };
 
     Func build() {
         Var x, y;
-        
-        Func clamped = Halide::BoundaryConditions::repeat_edge(input);
 
         // Upcast to 16-bit
-        Func in16;
-        in16(x, y) = cast<int16_t>(clamped(x, y));
-        
-        // Gradients in x and y.
-        Func gx;
-        Func gy;
-        gx(x, y) = (in16(x + 1, y) - in16(x - 1, y)) / 2;
-        gy(x, y) = (in16(x, y + 1) - in16(x, y - 1)) / 2;
+        Func input1_16;
+        input1_16(x, y) = cast<int16_t>(input1(x, y));
+        Func input2_16;
+        input2_16(x, y) = cast<int16_t>(input2(x, y));
 
-        // Gradient magnitude.
-        Func grad_mag;
-        grad_mag(x, y) = (gx(x, y) * gx(x, y) + gy(x, y) * gy(x, y));
+        // Absolute difference.
+        Func diff;
+        diff(x, y) = input2_16(x, y) - input1_16(x, y);
+        Func abs_diff;
+        abs_diff(x, y) = Halide::abs(diff(x, y));
 
         // Draw the result
         Func result;
-        result(x, y) = cast<uint8_t>(clamp(grad_mag(x, y), 0, 255));
-        
+        result(x, y) = cast<uint8_t>(clamp(abs_diff(x, y), 0, 255));
+
         // CPU schedule:
         //   Parallelize over scan lines, 4 scanlines per task.
         //   Independently, vectorize in x.
@@ -36,7 +33,7 @@ public:
             .compute_root()
             .vectorize(x, 8)
             .parallel(y, 8);
-        
+
         return result;
     }
 };

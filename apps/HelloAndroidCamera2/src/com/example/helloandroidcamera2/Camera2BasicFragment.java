@@ -187,9 +187,9 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                         HalideYuvBufferT dstYuv = dstSurface.allocNativeYuvBufferT();
 
                         if (mUseEdgeDetector) {
-                            HalideFilters.edgeDetect(prevSrcYuv, dstYuv);
+                            HalideFilters.edgeDetect(prevSrcYuv, srcYuv, dstYuv);
                         } else {
-                            HalideFilters.copy(prevSrcYuv, dstYuv);
+                            HalideFilters.copy(srcYuv, dstYuv);
                         }
 
                         dstYuv.close();

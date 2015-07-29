@@ -26,8 +26,8 @@ public class HalideFilters {
      * A Halide-accelerated edge detector on the luminance channel.
      * @return true if it succeeded.
      */
-    public static boolean edgeDetect(HalideYuvBufferT src, HalideYuvBufferT dst) {
-        return HalideFilters.edgeDetectHalide(src.handle(), dst.handle());
+    public static boolean edgeDetect(HalideYuvBufferT src1, HalideYuvBufferT src2, HalideYuvBufferT dst) {
+        return HalideFilters.edgeDetectHalide(src1.handle(), src2.handle(), dst.handle());
     }
 
     /**
@@ -40,5 +40,5 @@ public class HalideFilters {
      * A Halide-accelerated edge detector on the luminance channel. Chroma is set to 128.
      * @eturns true if it succeeded.
      */
-    private static native boolean edgeDetectHalide(long srcYuvHandle, long dstYuvHandle);
+    private static native boolean edgeDetectHalide(long src1YuvHandle, long src2YuvHandle, long dstYuvHandle);
 }
