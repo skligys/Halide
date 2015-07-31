@@ -26,17 +26,19 @@ public:
 
         // Draw the result, flip horizontally to account for front facing camera's orientation.
         Func result;
-        result(x, y) = cast<uint8_t>(clamped_abs_diff(input1.width() - 1 - x, y));
+        result(x, y) = cast<uint8_t>(clamped_abs_diff(x, y));
+        Func flipped_result;
+        flipped_result(x, y) = result(input1.width() - 1 - x, y);
 
         // CPU schedule:
         //   Parallelize over scan lines, 8 scanlines per task.
         //   Independently, vectorize in x.
-        result
+        flipped_result
             .compute_root()
             .vectorize(x, 8)
             .parallel(y, 8);
 
-        return result;
+        return flipped_result;
     }
 };
 
