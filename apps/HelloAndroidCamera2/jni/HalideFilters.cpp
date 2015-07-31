@@ -33,10 +33,12 @@ extern "C" void halide_print(void *, const char *msg) {
     t0 = t1;
 }
 
+bool addBouncyBall(uint32_t ballX, uint32_t ballY, buffer_t &luma, buffer_t &chromaU, buffer_t &chromaV);
+
 extern "C" {
 
 JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_copyHalide(
-    JNIEnv *env, jobject obj, jlong srcYuvBufferTHandle, jlong dstYuvBufferTHandle) {
+    JNIEnv *env, jobject obj, jlong srcYuvBufferTHandle, jint ballX, jint ballY, jlong dstYuvBufferTHandle) {
     if (srcYuvBufferTHandle == 0L || dstYuvBufferTHandle == 0L ) {
         LOGE("copyHalide failed: src and dst must not be null");
         return false;
@@ -101,13 +103,19 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_copyHa
         if (succeeded) {
             succeeded = flipHorizontal2D(src->chromaV(), dst->chromaV());
         }
+        if (succeeded) {
+            buffer_t luma = dst->luma();
+            buffer_t chromaU = dst->chromaU();
+            buffer_t chromaV = dst->chromaV();
+            succeeded = addBouncyBall(ballX, ballY, luma, chromaU, chromaV);
+        }
     }
 
     return succeeded;
 }
 
 JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDetectHalide(
-    JNIEnv *env, jobject obj, jlong src1YuvBufferTHandle, jlong src2YuvBufferTHandle, jlong dstYuvBufferTHandle) {
+    JNIEnv *env, jobject obj, jlong src1YuvBufferTHandle, jlong src2YuvBufferTHandle, jint ballX, jint ballY, jlong dstYuvBufferTHandle) {
     if (src1YuvBufferTHandle == 0L || src2YuvBufferTHandle == 0L || dstYuvBufferTHandle == 0L ) {
         LOGE("edgeDetectHalide failed: src1, src2 and dst must not be null");
         return false;
@@ -178,7 +186,56 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
     }
     LOGD("Time taken: %d us (minimum: %d us)", elapsed_us, min);
 
+    if (err == halide_error_code_success) {
+        buffer_t luma = dst->luma();
+        buffer_t chromaU = dst->chromaU();
+        buffer_t chromaV = dst->chromaV();
+        bool succeeded = addBouncyBall(ballX, ballY, luma, chromaU, chromaV);
+        if (!succeeded) {
+            err = halide_error_code_internal_error;
+        }
+    }
+
     return (err != halide_error_code_success);
 }
 
 } // extern "C"
+
+bool addBouncyBall(uint32_t ballX, uint32_t ballY, buffer_t &luma, buffer_t &chromaU, buffer_t &chromaV) {
+    // Fixed size 16x16.
+    const uint32_t sizeX = 16;
+    const uint32_t sizeY = 16;
+
+    // Check the bounds.
+    if (ballX + sizeX >= luma.extent[0] || ballY + sizeY >= luma.extent[1]) {
+        LOGE("addBouncyBall() out of bounds:\n\t"
+            "ball position: (%d, %d), ball size: (%d, %d), frame size: (%d, %d).",
+            ballX, ballY, sizeX, sizeY, luma.extent[0], luma.extent[1]);
+        return false;
+    }
+
+    // Only do byte sized components, that's all we need for the demo.
+    if (luma.elem_size != 1 || chromaU.elem_size != 1 || chromaV.elem_size != 1) {
+        LOGE("addBouncyBall() unsupported component size:\n\t"
+            "luma.elem_size: %d, chromaU.elem_size: %d, chromaV.elem_size: %d.",
+            luma.elem_size, chromaU.elem_size, chromaV.elem_size);
+    }
+
+    int32_t lumaElementStrideBytes = luma.stride[0] * luma.elem_size;
+    int32_t lumaRowStrideBytes = luma.stride[1] * luma.elem_size;
+    int32_t chromaURowStrideBytes = chromaU.stride[1] * chromaU.elem_size;
+    int32_t chromaUElementStrideBytes = chromaU.stride[0] * chromaU.elem_size;
+    int32_t chromaVRowStrideBytes = chromaV.stride[1] * chromaV.elem_size;
+    int32_t chromaVElementStrideBytes = chromaV.stride[0] * chromaV.elem_size;
+    for (int y = ballY; y < ballY + sizeY; ++y) {
+        uint8_t *lumaRow = luma.host + y * lumaRowStrideBytes;
+        uint8_t *chromaURow = chromaU.host + y / 2 * chromaURowStrideBytes;
+        uint8_t *chromaVRow = chromaV.host + y / 2 * chromaVRowStrideBytes;
+        for (int x = ballX; x < ballX + sizeX; ++x) {
+            // Bright green: YUV = (255, 0, 0).
+            lumaRow[x * lumaElementStrideBytes] = 255;
+            chromaURow[x / 2 * chromaUElementStrideBytes] = 0;
+            chromaVRow[x / 2 * chromaVElementStrideBytes] = 0;
+        }
+    }
+}

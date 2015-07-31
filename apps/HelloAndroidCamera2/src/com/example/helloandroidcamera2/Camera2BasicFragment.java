@@ -156,12 +156,13 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
         private Image prevImage;
         private long prevTimeNs = -1L;
+        private boolean ballInitialized = false;
+        private Ball ball;
 
         @Override
         public void onImageAvailable(ImageReader reader) {
             long startTimeNs = System.nanoTime();
             long elapsedMicroSec = (prevTimeNs == -1L) ? -1L : (startTimeNs - prevTimeNs) / 1000L;
-            prevTimeNs = startTimeNs;
             Log.d(TAG, ">>>>> onImageAvailable(), " + elapsedMicroSec + "us (" + 1000000L / elapsedMicroSec + "FPS) since last frame");
 
             if (mCameraDevice == null) {
@@ -186,10 +187,16 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                     if (srcYuv != null) {
                         HalideYuvBufferT dstYuv = dstSurface.allocNativeYuvBufferT();
 
-                        if (mUseEdgeDetector) {
-                            HalideFilters.edgeDetect(prevSrcYuv, srcYuv, dstYuv);
+                        if (ball == null) {
+                            ball = new Ball(image.getWidth(), image.getHeight());
                         } else {
-                            HalideFilters.copy(srcYuv, dstYuv);
+                            ball.update(startTimeNs - prevTimeNs);
+                        }
+
+                        if (mUseEdgeDetector) {
+                            HalideFilters.edgeDetect(prevSrcYuv, srcYuv, (int) ball.x, (int) ball.y, dstYuv);
+                        } else {
+                            HalideFilters.copy(srcYuv, (int) ball.x, (int) ball.y, dstYuv);
                         }
 
                         dstYuv.close();
@@ -201,12 +208,86 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             }
             prevImage.close();
             prevImage = image;
+            prevTimeNs = startTimeNs;
 
             long endTimeNs = System.nanoTime();
             elapsedMicroSec = (endTimeNs - startTimeNs) / 1000L;
             Log.d(TAG, "<<<<< onImageAvailable(), " + elapsedMicroSec + "us (" + 1000000L / elapsedMicroSec + "FPS) procesing frame");
         }
     };
+
+    private static class Ball {
+        // Important: these should match constants defined in HalidFilters::addBouncyBall(), otherwise hilarity ensues.
+        private static final int X_SIZE = 16; // pixels.
+        private static final int Y_SIZE = 16; // pixels.
+
+        // Sideways gravity since the screen is in portrait.
+        private static final double GRAVITY_X = 50.0; // pixels / second^2
+        private static final double GRAVITY_Y = 0.0; // pixels / second^2
+
+        // Limit the velocity just for playability.  We don't want the ball zooming around at Mach 5.
+        private static final double MAX_VELOCITY = 1000.0;
+        private static final double MAX_VELOCITY_SQUARED = MAX_VELOCITY * MAX_VELOCITY;
+
+        private final int maxX; // pixels.
+        private final int maxY; // pixels.
+        double x; // pixels.
+        double y; // pixels.
+        private double velocityX;  // pixels / second.
+        private double velocityY;  // pixels / second.
+
+        Ball(int maxX, int maxY) {
+          if (maxX <= X_SIZE || maxY <= Y_SIZE) {
+            throw new IllegalArgumentException("Frame too small: (" + maxX + ", " + maxY + "), ball size: (" + X_SIZE + ", " + Y_SIZE + ")");
+          }
+          this.maxX = maxX;
+          this.maxY = maxY;
+          this.x = maxX * 0.5;
+          this.y = maxY * 0.5;
+          this.velocityX = 150.0;  // Tweak this.
+          this.velocityY = 150.0;
+        }
+
+        void update(long deltaTimeNs) {
+          double deltaTimeSeconds = deltaTimeNs / 1_000_000_000.0;
+
+          double deltaVelocityX = GRAVITY_X * deltaTimeSeconds;
+          double deltaVelocityY = GRAVITY_Y * deltaTimeSeconds;
+          velocityX += deltaVelocityX;
+          velocityY += deltaVelocityY;
+          // Limit the speed to MAX_VELOCITY for playability.
+          double velocitySquared = velocityX * velocityX + velocityY * velocityY;
+          if (velocitySquared > MAX_VELOCITY_SQUARED) {
+            double factor = Math.sqrt(MAX_VELOCITY_SQUARED / velocitySquared);
+            velocityX *= factor;
+            velocityY *= factor;
+          }
+
+          double deltaX = velocityX * deltaTimeSeconds;
+          double deltaY = velocityY * deltaTimeSeconds;
+
+          double newX = x + deltaX;
+          if (newX < 0.0) {
+              newX = 0.0;
+              velocityX = -velocityX;
+          } else if (newX + X_SIZE >= maxX) {
+              newX = maxX - X_SIZE - 1;
+              velocityX = -velocityX;
+          }
+
+          double newY = y + deltaY;
+          if (newY < 0.0) {
+              newY = 0.0;
+              velocityY = -velocityY;
+          } else if (newY + Y_SIZE >= maxY) {
+              newY = maxY - Y_SIZE - 1;
+              velocityY = -velocityY;
+          }
+
+          x = newX;
+          y = newY;
+        }
+    }
 
     /**
      * {@link CaptureRequest.Builder} for the camera preview
