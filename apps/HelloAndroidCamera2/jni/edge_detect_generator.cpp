@@ -22,7 +22,7 @@ public:
 
         // Clamp, eliminate sensor noise.
         Func clamped_abs_diff;
-        clamped_abs_diff(x, y) = clamp(abs_diff(x, y), 10, 255) - 10;
+        clamped_abs_diff(x, y) = clamp(abs_diff(x, y), 5, 255) - 5;
 
         // Draw the result, flip horizontally to account for front facing camera's orientation.
         Func result;
