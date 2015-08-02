@@ -215,8 +215,8 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
 } // extern "C"
 
 bool addBouncyBall(uint32_t ballX, uint32_t ballY, buffer_t &luma, buffer_t &chromaU, buffer_t &chromaV) {
-    // Fixed size 32x32, needs to match Camera2BasicFragment.Ball.SIZE and EdgeDetect.ball_size.
-    const uint32_t SIZE = 32;
+    // Fixed size 64x64, needs to match Camera2BasicFragment.Ball.SIZE and EdgeDetect.ball_size.
+    const uint32_t SIZE = 64;
 
     // Check the bounds.
     if (ballX + SIZE >= luma.extent[0] || ballY + SIZE >= luma.extent[1]) {

@@ -224,7 +224,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
     private static class Ball {
         // Important: Needs to match HalidFilters::addBouncyBall::SIZE and EdgeDetect.ball_size.
-        private static final int SIZE = 32; // pixels.
+        private static final int SIZE = 64; // pixels.
 
         // Sideways gravity since the screen is in portrait.
         private static final double GRAVITY_X = 50.0; // pixels / second^2

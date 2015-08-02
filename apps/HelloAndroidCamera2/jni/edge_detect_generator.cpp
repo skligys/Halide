@@ -9,7 +9,7 @@ public:
     Param<uint32_t> ball_x{ "ball_x", 0 };
     Param<uint32_t> ball_y{ "ball_y", 0 };
     // Important: Needs to match HalidFilters::addBouncyBall::SIZE and Camera2BasicFragment.Ball.SIZE.
-    GeneratorParam<int> ball_size{ "ball_size", 32 };
+    GeneratorParam<int> ball_size{ "ball_size", 64 };
     GeneratorParam<float> force_factor{ "force_factor", 10.0 };
 
     Pipeline build() {
