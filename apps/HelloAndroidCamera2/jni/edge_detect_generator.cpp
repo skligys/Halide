@@ -6,6 +6,8 @@ class EdgeDetect : public Halide::Generator<EdgeDetect> {
 public:
     ImageParam input1{ UInt(8), 2, "input1" };
     ImageParam input2{ UInt(8), 2, "input2" };
+    // Important: Needs to match HalidFilters::addBouncyBall::SIZE and Camera2BasicFragment.Ball.SIZE.
+    GeneratorParam<int> ball_size{ "ball_size", 32 };
 
     Func build() {
         Var x, y;

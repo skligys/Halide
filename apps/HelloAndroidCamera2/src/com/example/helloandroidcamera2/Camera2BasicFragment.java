@@ -217,9 +217,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     };
 
     private static class Ball {
-        // Important: these should match constants defined in HalidFilters::addBouncyBall(), otherwise hilarity ensues.
-        private static final int X_SIZE = 16; // pixels.
-        private static final int Y_SIZE = 16; // pixels.
+        // Important: Needs to match HalidFilters::addBouncyBall::SIZE and EdgeDetect.ball_size.
+        private static final int SIZE = 32; // pixels.
 
         // Sideways gravity since the screen is in portrait.
         private static final double GRAVITY_X = 50.0; // pixels / second^2
@@ -237,8 +236,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         private double velocityY;  // pixels / second.
 
         Ball(int maxX, int maxY) {
-          if (maxX <= X_SIZE || maxY <= Y_SIZE) {
-            throw new IllegalArgumentException("Frame too small: (" + maxX + ", " + maxY + "), ball size: (" + X_SIZE + ", " + Y_SIZE + ")");
+          if (maxX <= SIZE || maxY <= SIZE) {
+            throw new IllegalArgumentException("Frame too small: (" + maxX + ", " + maxY + "), ball size: (" + SIZE + ", " + SIZE + ")");
           }
           this.maxX = maxX;
           this.maxY = maxY;
@@ -270,8 +269,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
           if (newX < 0.0) {
               newX = 0.0;
               velocityX = -velocityX;
-          } else if (newX + X_SIZE >= maxX) {
-              newX = maxX - X_SIZE - 1;
+          } else if (newX + SIZE >= maxX) {
+              newX = maxX - SIZE - 1;
               velocityX = -velocityX;
           }
 
@@ -279,8 +278,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
           if (newY < 0.0) {
               newY = 0.0;
               velocityY = -velocityY;
-          } else if (newY + Y_SIZE >= maxY) {
-              newY = maxY - Y_SIZE - 1;
+          } else if (newY + SIZE >= maxY) {
+              newY = maxY - SIZE - 1;
               velocityY = -velocityY;
           }
 

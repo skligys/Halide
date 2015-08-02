@@ -202,15 +202,14 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
 } // extern "C"
 
 bool addBouncyBall(uint32_t ballX, uint32_t ballY, buffer_t &luma, buffer_t &chromaU, buffer_t &chromaV) {
-    // Fixed size 16x16.
-    const uint32_t sizeX = 16;
-    const uint32_t sizeY = 16;
+    // Fixed size 32x32, needs to match Camera2BasicFragment.Ball.SIZE and EdgeDetect.ball_size.
+    const uint32_t SIZE = 32;
 
     // Check the bounds.
-    if (ballX + sizeX >= luma.extent[0] || ballY + sizeY >= luma.extent[1]) {
+    if (ballX + SIZE >= luma.extent[0] || ballY + SIZE >= luma.extent[1]) {
         LOGE("addBouncyBall() out of bounds:\n\t"
             "ball position: (%d, %d), ball size: (%d, %d), frame size: (%d, %d).",
-            ballX, ballY, sizeX, sizeY, luma.extent[0], luma.extent[1]);
+            ballX, ballY, SIZE, SIZE, luma.extent[0], luma.extent[1]);
         return false;
     }
 
@@ -227,11 +226,11 @@ bool addBouncyBall(uint32_t ballX, uint32_t ballY, buffer_t &luma, buffer_t &chr
     int32_t chromaUElementStrideBytes = chromaU.stride[0] * chromaU.elem_size;
     int32_t chromaVRowStrideBytes = chromaV.stride[1] * chromaV.elem_size;
     int32_t chromaVElementStrideBytes = chromaV.stride[0] * chromaV.elem_size;
-    for (int y = ballY; y < ballY + sizeY; ++y) {
+    for (int y = ballY; y < ballY + SIZE; ++y) {
         uint8_t *lumaRow = luma.host + y * lumaRowStrideBytes;
         uint8_t *chromaURow = chromaU.host + y / 2 * chromaURowStrideBytes;
         uint8_t *chromaVRow = chromaV.host + y / 2 * chromaVRowStrideBytes;
-        for (int x = ballX; x < ballX + sizeX; ++x) {
+        for (int x = ballX; x < ballX + SIZE; ++x) {
             // Bright green: YUV = (255, 0, 0).
             lumaRow[x * lumaElementStrideBytes] = 255;
             chromaURow[x / 2 * chromaUElementStrideBytes] = 0;
