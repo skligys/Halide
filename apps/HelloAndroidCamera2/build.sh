@@ -8,7 +8,7 @@ fi
 cd jni
 # Compile the program that when executed, creates an architecture-specific .so.
 # GenGen.cpp is a stub main().
-c++ -g -Wall -std=c++11 edge_detect_generator.cpp deinterleave_generator.cpp ../../../tools/GenGen.cpp -L ../../../bin -L ../../../build/lib -lHalide -I ../../../include -I ../../../build/include -ldl -lpthread -lz -fno-rtti
+c++ -g -Wall -std=c++11 edge_detect_generator.cpp preview_generator.cpp ../../../tools/GenGen.cpp -L ../../../bin -L ../../../build/lib -lHalide -I ../../../include -I ../../../build/include -ldl -lpthread -lz -fno-rtti
 
 # 64-bit MIPS (mips-64-android,mips64) currently does not build since
 # llvm will not compile for the R6 version of the ISA without Nan2008
@@ -24,8 +24,8 @@ for arch in arm-32-android,armeabi arm-32-android-armv7s,armeabi-v7a arm-64-andr
     mkdir -p halide_generated_$android_abi
     cd halide_generated_$android_abi
     # Set the target architecture and run a.out to create the arch-specific # .so.
-    DYLD_LIBRARY_PATH=../../../../bin LD_LIBRARY_PATH=../../../../bin ../a.out -g deinterleave -o . target=$hl_target
     DYLD_LIBRARY_PATH=../../../../bin LD_LIBRARY_PATH=../../../../bin ../a.out -g edge_detect -o . target=$hl_target
+    DYLD_LIBRARY_PATH=../../../../bin LD_LIBRARY_PATH=../../../../bin ../a.out -g preview -o . target=$hl_target
     cd ..
     unset IFS
 done

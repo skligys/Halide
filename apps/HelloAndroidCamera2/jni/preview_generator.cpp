@@ -2,10 +2,12 @@
 
 namespace {
 
-class EdgeDetect : public Halide::Generator<EdgeDetect> {
+class Preview : public Halide::Generator<Preview> {
 public:
     ImageParam luma1{ UInt(8), 2, "luma1" };
     ImageParam luma2{ UInt(8), 2, "luma2" };
+    ImageParam chromaU2{ UInt(8), 2, "chromaU2" };
+    ImageParam chromaV2{ UInt(8), 2, "chromaV2" };
     Param<uint32_t> ball_x{ "ball_x", 0 };
     Param<uint32_t> ball_y{ "ball_y", 0 };
     // Important: Needs to match HalidFilters::addBouncyBall::SIZE and Camera2BasicFragment.Ball.SIZE.
@@ -35,27 +37,27 @@ public:
         Func flipped_diff;
         flipped_diff(x, y) = diff(luma1.width() - 1 - x, y);
 
-        // CPU schedule:
-        //   Parallelize over scan lines, 8 scanlines per task.
-        //   Independently, vectorize in x.
-        flipped_diff
-            .compute_root()
-            .vectorize(x, 8)
-            .parallel(y, 8);
-
-        // Result chroma: (128, 128) almost everywhere to make diffs grayscale.  (0, 0) inside the ball to make it green.
+        // Flip input horizontally to account for front facing camera's sensor orientation.
+        Func result_luma;
+        result_luma(x, y) = luma2(luma2.width() - 1 - x, y);
         Func result_chroma_u;
+        result_chroma_u(x2, y2) = chromaU2(chromaU2.width() - 1 - x2, y2);
         Func result_chroma_v;
-        result_chroma_u(x2, y2) = cast<uint8_t>(128);
-        result_chroma_v(x2, y2) = cast<uint8_t>(128);
+        result_chroma_v(x2, y2) = chromaV2(chromaV2.width() - 1 - x2, y2);
 
         // Ball area.
         RDom r(ball_x, ball_size, ball_y, ball_size);
 
         // Ball area in chroma plane, image 2 times smaller.
         RDom r_uv(ball_x / 2, ball_size / 2, ball_y / 2, ball_size / 2);
+
         result_chroma_u(r_uv.x, r_uv.y) = cast<uint8_t>(0);
         result_chroma_v(r_uv.x, r_uv.y) = cast<uint8_t>(0);
+
+        result_luma
+            .compute_root()
+            .vectorize(x, 8)
+            .parallel(y, 8);
         result_chroma_u
             .compute_root()
             .vectorize(x2, 8)
@@ -86,10 +88,10 @@ public:
         force(1) = force_y();
         force.compute_root();
 
-        return Pipeline({flipped_diff, result_chroma_u, result_chroma_v, force});
+        return Pipeline({result_luma, result_chroma_u, result_chroma_v, force});
     }
 };
 
-Halide::RegisterGenerator<EdgeDetect> register_edge_detect{ "edge_detect" };
+Halide::RegisterGenerator<Preview> register_preview{ "preview" };
 
 }  // namespace

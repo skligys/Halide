@@ -195,15 +195,14 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                             ball.update(startTimeNs - prevTimeNs, prevForceX, prevForceY);
                         }
 
+                        float[] force = new float[2];
                         if (mUseEdgeDetector) {
-                            float[] force = new float[2];
                             HalideFilters.edgeDetect(prevSrcYuv, srcYuv, (int) ball.x, (int) ball.y, dstYuv, force);
-
-                            prevForceX = force[0];
-                            prevForceY = force[1];
                         } else {
-                            HalideFilters.copy(srcYuv, (int) ball.x, (int) ball.y, dstYuv);
+                            HalideFilters.preview(prevSrcYuv, srcYuv, (int) ball.x, (int) ball.y, dstYuv, force);
                         }
+                        prevForceX = force[0];
+                        prevForceY = force[1];
 
                         dstYuv.close();
                         srcYuv.close();

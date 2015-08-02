@@ -39,8 +39,8 @@ sources {
         cpp(CppSourceSet) {
             source {
                 srcDirs "jni/"
-                include "deinterleave_generator.cpp"
                 include "edge_detect_generator.cpp"
+                include "preview_generator.cpp"
             }
             source {
                 srcDirs "../../tools"
@@ -73,7 +73,7 @@ binaries.withType(NativeExecutableBinary) { binary ->
         "x86_64":       "x86-64-android-sse41",
         "x86":          "x86-32-android"
     ]
-    def generators = ["deinterleave", "edge_detect"]
+    def generators = ["edge_detect", "preview"]
     archs.each {
         arch -> println "creating task for: " + arch.key + " -> " + arch.value
         def android_abi = arch.key
