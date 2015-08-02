@@ -154,19 +154,11 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
         }
     }
 
-    // Set chrominance to 128 to appear grayscale.
-    if (dst->interleavedChromaView().host != nullptr) {
-        fill2D(dst->interleavedChromaView(), 128);
-    } else if (dst->packedPlanarChromaView().host != nullptr) {
-        fill2D(dst->packedPlanarChromaView(), 128);
-    } else {
-        fill2D(dst->chromaU(), 128);
-        fill2D(dst->chromaV(), 128);
-    }
-
     buffer_t src1Luma = src1->luma();
     buffer_t src2Luma = src2->luma();
     buffer_t dstLuma = dst->luma();
+    buffer_t dstChromaU = dst->chromaU();
+    buffer_t dstChromaV = dst->chromaV();
 
     jfloat *force = env->GetFloatArrayElements(dstForce, 0);
 
@@ -179,7 +171,7 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
     forceBuffer.elem_size = 4;
 
     int64_t t1 = halide_current_time_ns();
-    int err = edge_detect(&src1Luma, &src2Luma, ballX, ballY, &dstLuma, &forceBuffer);
+    int err = edge_detect(&src1Luma, &src2Luma, ballX, ballY, &dstLuma, &dstChromaU, &dstChromaV, &forceBuffer);
     if (err != halide_error_code_success) {
         LOGE("edge_detect failed with error code: %d", err);
     }
@@ -198,16 +190,6 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
     LOGD("Time taken: %d us (minimum: %d us)", elapsed_us, min);
 
     env->ReleaseFloatArrayElements(dstForce, force, 0);
-
-    if (err == halide_error_code_success) {
-        buffer_t luma = dst->luma();
-        buffer_t chromaU = dst->chromaU();
-        buffer_t chromaV = dst->chromaV();
-        bool succeeded = addBouncyBall(ballX, ballY, luma, chromaU, chromaV);
-        if (!succeeded) {
-            err = halide_error_code_internal_error;
-        }
-    }
 
     return (err != halide_error_code_success);
 }
