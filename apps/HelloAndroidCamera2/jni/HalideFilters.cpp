@@ -115,7 +115,7 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_copyHa
 }
 
 JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDetectHalide(
-    JNIEnv *env, jobject obj, jlong src1YuvBufferTHandle, jlong src2YuvBufferTHandle, jint ballX, jint ballY, jlong dstYuvBufferTHandle) {
+    JNIEnv *env, jobject obj, jlong src1YuvBufferTHandle, jlong src2YuvBufferTHandle, jint ballX, jint ballY, jlong dstYuvBufferTHandle, jfloatArray dstForce) {
     if (src1YuvBufferTHandle == 0L || src2YuvBufferTHandle == 0L || dstYuvBufferTHandle == 0L ) {
         LOGE("edgeDetectHalide failed: src1, src2 and dst must not be null");
         return false;
@@ -167,8 +167,19 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
     buffer_t src1Luma = src1->luma();
     buffer_t src2Luma = src2->luma();
     buffer_t dstLuma = dst->luma();
+
+    jfloat *force = env->GetFloatArrayElements(dstForce, 0);
+
+    buffer_t forceBuffer;
+    forceBuffer = { 0 };
+    forceBuffer.host = reinterpret_cast<uint8_t *>(force);
+    forceBuffer.host_dirty = true;
+    forceBuffer.extent[0] = 2;
+    forceBuffer.stride[0] = 1;
+    forceBuffer.elem_size = 4;
+
     int64_t t1 = halide_current_time_ns();
-    int err = edge_detect(&src1Luma, &src2Luma, &dstLuma);
+    int err = edge_detect(&src1Luma, &src2Luma, ballX, ballY, &dstLuma, &forceBuffer);
     if (err != halide_error_code_success) {
         LOGE("edge_detect failed with error code: %d", err);
     }
@@ -185,6 +196,8 @@ JNIEXPORT bool JNICALL Java_com_example_helloandroidcamera2_HalideFilters_edgeDe
         }
     }
     LOGD("Time taken: %d us (minimum: %d us)", elapsed_us, min);
+
+    env->ReleaseFloatArrayElements(dstForce, force, 0);
 
     if (err == halide_error_code_success) {
         buffer_t luma = dst->luma();

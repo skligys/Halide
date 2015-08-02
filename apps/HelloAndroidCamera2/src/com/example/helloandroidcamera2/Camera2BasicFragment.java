@@ -158,6 +158,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         private long prevTimeNs = -1L;
         private boolean ballInitialized = false;
         private Ball ball;
+        private float prevForceX;
+        private float prevForceY;
 
         @Override
         public void onImageAvailable(ImageReader reader) {
@@ -190,11 +192,15 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                         if (ball == null) {
                             ball = new Ball(image.getWidth(), image.getHeight());
                         } else {
-                            ball.update(startTimeNs - prevTimeNs);
+                            ball.update(startTimeNs - prevTimeNs, prevForceX, prevForceY);
                         }
 
                         if (mUseEdgeDetector) {
-                            HalideFilters.edgeDetect(prevSrcYuv, srcYuv, (int) ball.x, (int) ball.y, dstYuv);
+                            float[] force = new float[2];
+                            HalideFilters.edgeDetect(prevSrcYuv, srcYuv, (int) ball.x, (int) ball.y, dstYuv, force);
+
+                            prevForceX = force[0];
+                            prevForceY = force[1];
                         } else {
                             HalideFilters.copy(srcYuv, (int) ball.x, (int) ball.y, dstYuv);
                         }
@@ -247,11 +253,11 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
           this.velocityY = 150.0;
         }
 
-        void update(long deltaTimeNs) {
+        void update(long deltaTimeNs, float forceX, float forceY) {
           double deltaTimeSeconds = deltaTimeNs / 1_000_000_000.0;
 
-          double deltaVelocityX = GRAVITY_X * deltaTimeSeconds;
-          double deltaVelocityY = GRAVITY_Y * deltaTimeSeconds;
+          double deltaVelocityX = (GRAVITY_X + forceX) * deltaTimeSeconds;
+          double deltaVelocityY = (GRAVITY_Y + forceY) * deltaTimeSeconds;
           velocityX += deltaVelocityX;
           velocityY += deltaVelocityY;
           // Limit the speed to MAX_VELOCITY for playability.
